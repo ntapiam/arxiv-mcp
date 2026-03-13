@@ -55,13 +55,13 @@ Files persist indefinitely. Agents can read them directly from the returned path
 Requires Rust ([install via rustup](https://rustup.rs)).
 
 ```bash
-cargo install --git https://github.com/your-username/arxiv-mcp
+cargo install --git https://github.com/ntapiam/arxiv-mcp
 ```
 
 Or from a local clone:
 
 ```bash
-git clone https://github.com/your-username/arxiv-mcp
+git clone https://github.com/ntapiam/arxiv-mcp
 cargo install --path arxiv-mcp
 ```
 
