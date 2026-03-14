@@ -1,6 +1,6 @@
 # arxiv-mcp
 
-An [MCP](https://modelcontextprotocol.io) server that lets AI assistants search arXiv, inspect paper metadata, and download full paper sources to a local cache for reading.
+An [MCP](https://modelcontextprotocol.io) server that lets AI assistants search arXiv, inspect paper metadata, download full paper sources to a local cache for reading, and retrieve BibTeX citations.
 
 ## Tools
 
@@ -8,8 +8,10 @@ An [MCP](https://modelcontextprotocol.io) server that lets AI assistants search 
 |------|-------------|
 | `search_papers` | Search arXiv by keyword/query, returns ranked results |
 | `get_paper_info` | Fetch metadata for a specific paper by arXiv ID |
+| `get_paper_bibtex` | Fetch the BibTeX citation entry for a paper |
 | `download_sources` | Download and extract a paper's source files to local cache |
-| `list_cached_papers` | List all papers already downloaded to the local cache |
+| `list_cached_papers` | List all papers in the local cache, flagging outdated entries |
+| `purge_outdated_cache` | Delete all cached papers older than 30 days |
 
 ### `search_papers`
 ```json
@@ -23,32 +25,43 @@ Returns an array of papers with `id`, `title`, `authors`, `published`, `summary`
 ```
 Returns full metadata for the paper. Supports both new-style IDs (`2301.07041`) and old-style (`cs/0612060`).
 
+### `get_paper_bibtex`
+```json
+{ "paper_id": "1706.03762" }
+```
+Returns a ready-to-use BibTeX entry string sourced directly from `arxiv.org/bibtex/<id>`.
+
 ### `download_sources`
 ```json
 { "paper_id": "1706.03762" }
 ```
-Downloads the source tarball from arXiv, extracts it to `~/.cache/arxiv-mcp/<paper-id>/`, and returns the local `path` and a list of extracted `files`. Subsequent calls for the same paper return immediately from cache.
+Downloads the source tarball from arXiv, extracts it to the local cache directory, and returns the local `path` and a list of extracted `files`. Subsequent calls for the same paper return immediately from cache.
 
 ### `list_cached_papers`
 ```json
 {}
 ```
-Returns all papers already in the local cache with their `paper_id` and local `path`.
+Returns all papers in the local cache. Each entry includes `paper_id`, `path`, `cached_at` (ISO 8601), and `outdated` (true if older than 30 days). When outdated entries exist, a top-level `warning` is included.
+
+### `purge_outdated_cache`
+```json
+{}
+```
+**Irreversible.** Deletes all cached papers older than 30 days. Returns a list of `purged` IDs and a `count`.
 
 ## Local Cache
 
-Sources are extracted to:
-```
-~/.cache/arxiv-mcp/
-  1706.03762/       ← "Attention Is All You Need" LaTeX source
-    ms.tex
-    background.tex
-    ...
-  cs_0612060/       ← old-style IDs: "/" → "_"
-    ...
-```
+Sources are extracted to the platform cache directory:
 
-Files persist indefinitely. Agents can read them directly from the returned path.
+| Platform | Path |
+|----------|------|
+| Linux | `~/.cache/arxiv-mcp/<paper-id>/` |
+| macOS | `~/Library/Caches/arxiv-mcp/<paper-id>/` |
+| Windows | `%LOCALAPPDATA%\arxiv-mcp\<paper-id>\` |
+
+Old-style arXiv IDs (e.g. `cs/0612060`) are stored with `/` replaced by `_`.
+
+Files persist indefinitely. Use `purge_outdated_cache` to clean up entries older than 30 days.
 
 ## Installation
 
@@ -95,8 +108,13 @@ The server communicates over **stdio** using the MCP protocol (newline-delimited
 npx @modelcontextprotocol/inspector arxiv-mcp
 ```
 
+## CI
+
+Builds are run on tagged releases (`v*`) across Linux, macOS (ARM), and Windows via GitHub Actions.
+
 ## Notes
 
 - arXiv's API is public and requires no API key. Requests are rate-limited to ~3/s.
 - Paper sources are `.tar.gz` archives containing LaTeX. PDFs are saved as `paper.pdf` when no source is available.
 - The arXiv API is queried at `export.arxiv.org/api/query` (Atom feed).
+- BibTeX entries are sourced from `arxiv.org/bibtex/<id>`.
