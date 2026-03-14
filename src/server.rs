@@ -7,7 +7,7 @@ use rmcp::{
 use serde::Serialize;
 
 use crate::arxiv::api::ArxivClient;
-use crate::cache::{downloader, Cache};
+use crate::cache::{downloader, Cache, PurgeResult};
 
 #[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
 struct SearchParams {
@@ -27,6 +27,14 @@ struct PaperIdParams {
 struct DownloadResult {
     path: String,
     files: Vec<String>,
+}
+
+#[derive(Debug, Serialize)]
+struct ListCacheResult {
+    papers: Vec<crate::cache::CachedPaper>,
+    outdated_count: usize,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    warning: Option<String>,
 }
 
 #[derive(Debug, Clone)]
@@ -91,7 +99,22 @@ impl ArxivServer {
     #[tool(description = "List all locally cached arXiv papers")]
     async fn list_cached_papers(&self) -> Result<String, String> {
         let papers = Cache::list().map_err(|e| e.to_string())?;
-        serde_json::to_string_pretty(&papers).map_err(|e| e.to_string())
+        let outdated_count = papers.iter().filter(|p| p.outdated).count();
+        let warning = if outdated_count > 0 {
+            Some(format!(
+                "{outdated_count} paper(s) are older than 30 days — use purge_outdated_cache to remove them"
+            ))
+        } else {
+            None
+        };
+        let result = ListCacheResult { papers, outdated_count, warning };
+        serde_json::to_string_pretty(&result).map_err(|e| e.to_string())
+    }
+
+    #[tool(description = "Permanently delete all cached arXiv papers older than 30 days. This action is irreversible.")]
+    async fn purge_outdated_cache(&self) -> Result<String, String> {
+        let result: PurgeResult = Cache::purge_outdated().map_err(|e| e.to_string())?;
+        serde_json::to_string_pretty(&result).map_err(|e| e.to_string())
     }
 }
 
