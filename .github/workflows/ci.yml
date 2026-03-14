@@ -15,13 +15,13 @@ jobs:
         include:
           - os: ubuntu-latest
             binary: arxiv-mcp
-            artifact: arxiv-mcp-x86_64-linux
+            artifact: arxiv-mcp-x86_64-unknown-linux-gnu
           - os: macos-latest
             binary: arxiv-mcp
-            artifact: arxiv-mcp-aarch64-macos
+            artifact: arxiv-mcp-aarch64-apple-darwin
           - os: windows-latest
             binary: arxiv-mcp.exe
-            artifact: arxiv-mcp-x86_64-windows.exe
+            artifact: arxiv-mcp-x86_64-pc-windows-msvc.exe
 
     steps:
       - uses: actions/checkout@v4
@@ -98,9 +98,9 @@ jobs:
 
             | Platform | Binary |
             |----------|--------|
-            | Linux (x86_64) | `arxiv-mcp-x86_64-linux` |
-            | macOS (Apple Silicon) | `arxiv-mcp-aarch64-macos` |
-            | Windows (x86_64) | `arxiv-mcp-x86_64-windows.exe` |
+            | Linux (x86_64) | `arxiv-mcp-x86_64-unknown-linux-gnu` |
+            | macOS (Apple Silicon) | `arxiv-mcp-aarch64-apple-darwin` |
+            | Windows (x86_64) | `arxiv-mcp-x86_64-pc-windows-msvc.exe` |
 
             Then add to your MCP host config (e.g. Claude Desktop):
 

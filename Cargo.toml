@@ -2,6 +2,15 @@
 name = "arxiv-mcp"
 version = "0.1.0"
 edition = "2024"
+description = "MCP server for searching arXiv, fetching paper metadata/BibTeX, and downloading paper sources"
+license = "MIT"
+repository = "https://github.com/ntapiam/arxiv-mcp"
+keywords = ["mcp", "arxiv", "llm", "ai", "research"]
+categories = ["command-line-utilities", "science"]
+
+[package.metadata.binstall]
+pkg-url = "{ repo }/releases/download/v{ version }/{ name }-{ target }{ binary-ext }"
+pkg-fmt = "bin"
 
 [dependencies]
 rmcp = { version = "1.2.0", features = ["server", "transport-io"] }

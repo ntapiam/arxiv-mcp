@@ -65,17 +65,25 @@ Files persist indefinitely. Use `purge_outdated_cache` to clean up entries older
 
 ## Installation
 
-Requires Rust ([install via rustup](https://rustup.rs)).
+**Precompiled binary** (recommended, no Rust required):
+
+```bash
+# requires cargo-binstall (cargo install cargo-binstall)
+cargo binstall arxiv-mcp
+```
+
+Or download a binary directly from [GitHub Releases](https://github.com/ntapiam/arxiv-mcp/releases).
+
+**From crates.io** (compiles from source, requires Rust):
+
+```bash
+cargo install arxiv-mcp
+```
+
+**From source** (latest unreleased):
 
 ```bash
 cargo install --git https://github.com/ntapiam/arxiv-mcp
-```
-
-Or from a local clone:
-
-```bash
-git clone https://github.com/ntapiam/arxiv-mcp
-cargo install --path arxiv-mcp
 ```
 
 ## MCP Configuration
