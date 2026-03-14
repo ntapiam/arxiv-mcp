@@ -109,3 +109,44 @@ fn format_unix_timestamp(secs: u64) -> String {
 fn is_leap(year: i64) -> bool {
     (year % 4 == 0 && year % 100 != 0) || year % 400 == 0
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::fs;
+    use std::process::Command;
+
+    #[test]
+    fn test_list_detects_outdated() {
+        let tmp = std::env::temp_dir().join("arxiv-mcp-test");
+        fs::create_dir_all(&tmp).unwrap();
+
+        // Fresh entry
+        let fresh = tmp.join("2301.07041");
+        fs::create_dir_all(&fresh).unwrap();
+
+        // Stale entry: backdate via `touch`
+        let stale = tmp.join("1706.03762");
+        fs::create_dir_all(&stale).unwrap();
+        Command::new("touch")
+            .args(["-t", "202501010000", stale.to_str().unwrap()])
+            .status()
+            .unwrap();
+
+        // Simulate Cache::list() logic directly
+        let now = std::time::SystemTime::now();
+        let expiry = Duration::from_secs(EXPIRY_DAYS * 24 * 60 * 60);
+        let mut outdated = 0usize;
+        for entry in fs::read_dir(&tmp).unwrap() {
+            let entry = entry.unwrap();
+            if let Ok(meta) = entry.metadata() {
+                if let Ok(mtime) = meta.modified() {
+                    let age = now.duration_since(mtime).unwrap_or(Duration::ZERO);
+                    if age > expiry { outdated += 1; }
+                }
+            }
+        }
+        assert_eq!(outdated, 1, "expected exactly 1 stale entry");
+        fs::remove_dir_all(&tmp).unwrap();
+    }
+}

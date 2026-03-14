@@ -96,6 +96,18 @@ impl ArxivServer {
         serde_json::to_string_pretty(&result).map_err(|e| e.to_string())
     }
 
+    #[tool(description = "Get the BibTeX citation entry for an arXiv paper")]
+    async fn get_paper_bibtex(
+        &self,
+        Parameters(params): Parameters<PaperIdParams>,
+    ) -> Result<String, String> {
+        let arxiv = ArxivClient::new(self.client.clone());
+        arxiv
+            .get_bibtex(&params.paper_id)
+            .await
+            .map_err(|e| e.to_string())
+    }
+
     #[tool(description = "List all locally cached arXiv papers")]
     async fn list_cached_papers(&self) -> Result<String, String> {
         let papers = Cache::list().map_err(|e| e.to_string())?;

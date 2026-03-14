@@ -33,6 +33,23 @@ impl ArxivClient {
             .next()
             .ok_or_else(|| anyhow::anyhow!("Paper not found: {}", paper_id))
     }
+
+    pub async fn get_bibtex(&self, paper_id: &str) -> anyhow::Result<String> {
+        let url = format!("https://arxiv.org/bibtex/{}", paper_id);
+        let resp = self.client.get(&url).send().await?;
+        if !resp.status().is_success() {
+            return Err(anyhow::anyhow!(
+                "arXiv returned status {} for paper '{}'",
+                resp.status(),
+                paper_id
+            ));
+        }
+        let text = resp.text().await?;
+        if text.trim().is_empty() {
+            return Err(anyhow::anyhow!("No BibTeX entry found for '{}'", paper_id));
+        }
+        Ok(text)
+    }
 }
 
 fn extract_arxiv_id(raw: &str) -> String {
