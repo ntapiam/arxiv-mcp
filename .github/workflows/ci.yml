@@ -12,7 +12,16 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        include:
+          - os: ubuntu-latest
+            binary: arxiv-mcp
+            artifact: arxiv-mcp-x86_64-linux
+          - os: macos-latest
+            binary: arxiv-mcp
+            artifact: arxiv-mcp-aarch64-macos
+          - os: windows-latest
+            binary: arxiv-mcp.exe
+            artifact: arxiv-mcp-x86_64-windows.exe
 
     steps:
       - uses: actions/checkout@v4
@@ -42,8 +51,66 @@ jobs:
       - name: Clippy
         run: cargo clippy --locked -- -D warnings
 
-      - name: Build
-        run: cargo build --locked
+      - name: Build (release)
+        run: cargo build --locked --release
 
       - name: Test
         run: cargo test --locked
+
+      - name: Rename binary
+        shell: bash
+        run: cp target/release/${{ matrix.binary }} ${{ matrix.artifact }}
+
+      - name: Upload binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}
+          path: ${{ matrix.artifact }}
+
+  release:
+    name: Create Release
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download all binaries
+        uses: actions/download-artifact@v4
+        with:
+          path: binaries
+          merge-multiple: true
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          body: |
+            ## arxiv-mcp ${{ github.ref_name }}
+
+            An MCP server that lets AI assistants search arXiv, fetch paper metadata and BibTeX citations, and download paper sources to a local cache.
+
+            ### Install
+
+            Download the binary for your platform below and place it somewhere on your `PATH`:
+
+            | Platform | Binary |
+            |----------|--------|
+            | Linux (x86_64) | `arxiv-mcp-x86_64-linux` |
+            | macOS (Apple Silicon) | `arxiv-mcp-aarch64-macos` |
+            | Windows (x86_64) | `arxiv-mcp-x86_64-windows.exe` |
+
+            Then add to your MCP host config (e.g. Claude Desktop):
+
+            ```json
+            {
+              "mcpServers": {
+                "arxiv": { "command": "arxiv-mcp" }
+              }
+            }
+            ```
+
+            ---
+          files: binaries/*
